@@ -29,7 +29,8 @@ function Read-AppConfig {
     
     try {
         # Lee el contenido del archivo JSON
-        $Config = Get-Content -Path $FilePath -Raw | ConvertFrom-Json -ErrorAction Stop
+        # Forzamos la lectura como UTF8 para evitar errores de codificación/BOM con ConvertFrom-Json
+        $Config = Get-Content -Path $FilePath -Encoding UTF8 -Raw | ConvertFrom-Json -ErrorAction Stop
         
         # Validación simple de la estructura
         if ($Config -is [System.Collections.Generic.IDictionary[string,object]] -and $Config.ContainsKey('apps')) {
