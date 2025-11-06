@@ -65,8 +65,8 @@ Para cambiar las aplicaciones instaladas en un grupo existente, solo necesitas e
     "name": "Nombre visible",
     "wingetId": "Identificador.Exacto.Winget" // ¡Crucial! Obténlo con 'winget search'
 }
-
-### B. Añadir Nuevos Grupos al Menú
+```
+## B. Añadir Nuevos Grupos al Menú
 
 Para añadir un nuevo grupo de aplicaciones (ej: "Multimedia"):
 
