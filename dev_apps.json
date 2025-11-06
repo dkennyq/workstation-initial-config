@@ -1,0 +1,17 @@
+{
+    "description": "Lista de aplicaciones de desarrollo comunes para instalar con Winget.",
+    "apps": [
+        {
+            "name": "Visual Studio Code",
+            "wingetId": "Microsoft.VisualStudioCode"
+        },
+        {
+            "name": "Git",
+            "wingetId": "Git.Git"
+        },
+        {
+            "name": "Python 3",
+            "wingetId": "Python.Python.3"
+        }
+    ]
+}
