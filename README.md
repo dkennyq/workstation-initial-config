@@ -65,3 +65,46 @@ Para cambiar las aplicaciones instaladas en un grupo existente, solo necesitas e
     "name": "Nombre visible",
     "wingetId": "Identificador.Exacto.Winget" // ¡Crucial! Obténlo con 'winget search'
 }
+
+### B. Añadir Nuevos Grupos al Menú
+
+Para añadir un nuevo grupo de aplicaciones (ej: "Multimedia"):
+
+1.  **Crea un nuevo archivo JSON** (ej: `multimedia_apps.json`) con la lista de apps.
+2.  **Edita `Install-Apps.ps1`** y localiza la sección `DEFINICIÓN DEL MENÚ`.
+3.  **Añade una nueva entrada** al diccionario `$MenuOptions`, asegurándote de usar el siguiente número de opción disponible:
+
+    ```powershell
+    # Ejemplo de cómo añadir la Opción 3 (Multimedia):
+    $MenuOptions = @{
+        1 = @{ Label = "Instalar apps de Ofimática/Comunes"; ConfigFile = "office_apps.json" }
+        2 = @{ Label = "Instalar apps de Desarrollo (Dev)"; ConfigFile = "dev_apps.json" }
+        3 = @{ Label = "Instalar apps de Multimedia"; ConfigFile = "multimedia_apps.json" } # <--- NUEVA OPCIÓN
+        # ... la opción 'Instalar TODO' se calcula automáticamente ...
+    }
+    ```
+
+---
+
+## 🤝 Contribuciones
+
+Las sugerencias para mejorar el script o añadir nuevos grupos de aplicaciones son bienvenidas.
+
+Si deseas contribuir:
+
+1.  Haz un **Fork** del repositorio.
+2.  Crea una nueva **Branch** (`git checkout -b feature/nueva-app`).
+3.  Asegúrate de que tus scripts y JSONs sigan la estructura actual.
+4.  Realiza un **Pull Request** explicando claramente los cambios.
+
+---
+
+## 📝 Licencia
+
+Este proyecto está bajo la Licencia **MIT**.
+
+Esto significa que eres libre de usar, copiar, modificar, fusionar, publicar, distribuir, sublicenciar y/o vender copias del Software, siempre y cuando se incluya el aviso de derechos de autor y este aviso de licencia.
+
+Consulta el archivo `LICENSE.md` para ver el texto completo de la licencia.
+
+---
