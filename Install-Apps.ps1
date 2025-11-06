@@ -61,13 +61,18 @@ function Install-Apps {
         [array]$Apps
     )
     
-    Write-Host "`n--- Iniciando la instalación de $($Apps.Count) aplicaciones... ---" -ForegroundColor Yellow
+    $TotalApps = $Apps.Count
+    $Counter = 0
+    
+    Write-Host "`n--- Iniciando la instalación de $TotalApps aplicaciones... ---" -ForegroundColor Yellow
     
     foreach ($App in $Apps) {
+        $Counter++
         $AppName = $App.name
         $WingetId = $App.wingetId
         
-        Write-Host "`n--> Intentando instalar: $AppName (ID: $WingetId)..." -ForegroundColor Cyan
+        # Muestra el contador (ej: [1 de 5])
+        Write-Host "`n[$Counter de $TotalApps] --> Intentando instalar: $AppName (ID: $WingetId)..." -ForegroundColor Cyan
         
         # Ejecución de winget:
         # /s para desatendido, /accepteula para aceptar el acuerdo de licencia, 
