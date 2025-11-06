@@ -15,6 +15,7 @@
 $ScriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
 # Función para verificar y leer el archivo de configuración JSON
+# Función para verificar y leer el archivo de configuración de texto plano (Lista de IDs)
 function Read-AppConfig {
     param(
         [Parameter(Mandatory=$true)]
@@ -28,15 +29,23 @@ function Read-AppConfig {
     }
     
     try {
-        # Lee el contenido del archivo JSON
-        # Forzamos la lectura como UTF8 para evitar errores de codificación/BOM con ConvertFrom-Json
-        $Config = Get-Content -Path $FilePath -Encoding UTF8 -Raw | ConvertFrom-Json -ErrorAction Stop
+        # Lee el contenido del archivo como una lista de líneas (IDs de Winget)
+        $AppIDs = Get-Content -Path $FilePath -Encoding UTF8 -ErrorAction Stop | Where-Object { $_.Trim() -ne "" }
         
-        # Validación simple de la estructura
-        if ($Config -is [System.Collections.Generic.IDictionary[string,object]] -and $Config.ContainsKey('apps')) {
-            return $Config.apps
+        # Convierta la lista de IDs de texto a un formato de objetos que el script pueda usar.
+        # En este formato simplificado, el 'name' es igual al 'wingetId'.
+        $Apps = @()
+        foreach ($ID in $AppIDs) {
+            $Apps += [PSCustomObject]@{
+                name     = $ID
+                wingetId = $ID
+            }
+        }
+        
+        if ($Apps.Count -gt 0) {
+            return $Apps
         } else {
-            Write-Error "ERROR: El archivo '$FileName' tiene un formato JSON inválido o le falta la clave 'apps'."
+            Write-Error "ERROR: El archivo '$FileName' está vacío o no contiene IDs de Winget válidos."
             return $null
         }
     } catch {
@@ -85,19 +94,16 @@ function Install-Apps {
 
 # El HashTable contiene la información para el menú:
 # Clave: Número de opción.
-# Valor: Un PSObject con 'Label' (lo que se muestra en el menú) y 'ConfigFile' (el JSON a cargar).
+# Valor: Un PSObject con 'Label' (lo que se muestra en el menú) y 'ConfigFile' (el list a cargar).
 $MenuOptions = @{
-    1 = @{ Label = "Instalar apps de Ofimática/Comunes"; ConfigFile = "office_apps.json" }
-    2 = @{ Label = "Instalar apps de Desarrollo (Dev)"; ConfigFile = "dev_apps.json" }
-    # -------------------------------------------------------------------------
+    1 = @{ Label = "Instalar apps de Ofimática/Comunes"; ConfigFile = "office_apps.list" } # Cambiado a .list
+    2 = @{ Label = "Instalar apps de Desarrollo (Dev)"; ConfigFile = "dev_apps.list" }    # Cambiado a .list
     # COMENTARIO PARA AÑADIR NUEVAS OPCIONES DE MENÚ:
     # -------------------------------------------------------------------------
     # Para añadir una nueva opción de menú (ej: Opción 3):
-    # 1. Crea un nuevo archivo JSON (ej: 'multimedia_apps.json') con la lista de apps.
+    # 1. Crea un nuevo archivo de texto (ej: 'multimedia_apps.list') con un winget ID por línea.
     # 2. Añade una nueva entrada al HashTable $MenuOptions siguiendo el patrón:
-    #    3 = @{ Label = "Instalar apps de Multimedia"; ConfigFile = "multimedia_apps.json" }
-    # Asegúrate de usar un número de opción que no esté ya en uso.
-    # -------------------------------------------------------------------------
+    #    3 = @{ Label = "Instalar apps de Multimedia"; ConfigFile = "multimedia_apps.list" }
 }
 
 # Opción especial para instalar TODO. Requiere que existan todos los archivos configurados.
