@@ -1,4 +1,4 @@
-# Script para descargar, descomprimir y ejecutar el instalador principal.
+﻿# Script para descargar, descomprimir y ejecutar el instalador principal.
 # Debe ejecutarse en PowerShell como Administrador.
 
 # 1. Configuración de Variables

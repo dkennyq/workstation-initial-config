@@ -1,4 +1,4 @@
-# Requires -RunAsAdministrator
+﻿# Requires -RunAsAdministrator
 #------------------------------------------------------------------------------
 # Script para Instalación Desatendida de Aplicaciones con Winget
 # Creado por [Gemini AI]
