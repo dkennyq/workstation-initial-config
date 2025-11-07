@@ -11,6 +11,20 @@
 # Ejecutar este script requiere permisos de administrador.
 #------------------------------------------------------------------------------
 
+# --- Configuración del Registro (Log) ---
+$LogFileName = "Installation_Log_" + (Get-Date -Format "yyyyMMdd_HHmmss") + ".txt"
+$LogFilePath = Join-Path -Path $ScriptPath -ChildPath $LogFileName
+
+try {
+    # Inicia la transcripción (grabación) de toda la sesión de PowerShell.
+    # El parámetro -Force permite sobrescribir si el archivo ya existe (aunque el timestamp lo evita).
+    Start-Transcript -Path $LogFilePath -Force -Append
+    Write-Host "Registro de sesión iniciado. Guardando salida en: $LogFilePath" -ForegroundColor DarkGray
+    Write-Host "--------------------------------------------------------" -ForegroundColor DarkGray
+} catch {
+    Write-Host "ADVERTENCIA: No se pudo iniciar el registro de la sesión." -ForegroundColor Red
+}
+
 # Ruta base donde se encuentran el script y los archivos de configuración
 $ScriptPath = Split-Path -Parent $MyInvocation.MyCommand.Definition
 
@@ -93,6 +107,27 @@ function Install-Apps {
     Write-Host "`n--- Proceso de instalación finalizado. ---" -ForegroundColor Yellow
 }
 
+# Función para crear un punto de restauración del sistema
+function New-RestorePoint {
+    param(
+        [Parameter(Mandatory=$true)]
+        [string]$Description
+    )
+    
+    Write-Host "`n--> Creando Punto de Restauración... Por favor, espera." -ForegroundColor DarkYellow
+    
+    try {
+        # El comando checkpoint-computer crea el punto de restauración.
+        Checkpoint-Computer -Description $Description -RestorePointType "MODIFY_SETTINGS" -ErrorAction Stop
+        Write-Host "    [OK] Punto de restauración '$Description' creado con éxito." -ForegroundColor Green
+        return $true
+    } catch {
+        Write-Host "    [FALLO] No se pudo crear el punto de restauración. Asegúrate de que el 'Servicio de instantáneas de volumen' (VSS) esté activo." -ForegroundColor Red
+        Write-Host "    Mensaje de error: $($_.Exception.Message)" -ForegroundColor Red
+        return $false
+    }
+}
+
 # -----------------------------------------------------------------------------
 # DEFINICIÓN DEL MENÚ
 # -----------------------------------------------------------------------------
@@ -100,15 +135,13 @@ function Install-Apps {
 # El HashTable contiene la información para el menú:
 # Clave: Número de opción.
 # Valor: Un PSObject con 'Label' (lo que se muestra en el menú) y 'ConfigFile' (el list a cargar).
+# R  Opción para crear el punto de restauración
 $MenuOptions = @{
-    1 = @{ Label = "Instalar apps de Ofimática/Comunes"; ConfigFile = "office_apps.list" } # Cambiado a .list
-    2 = @{ Label = "Instalar apps de Desarrollo (Dev)"; ConfigFile = "dev_apps.list" }    # Cambiado a .list
-    # COMENTARIO PARA AÑADIR NUEVAS OPCIONES DE MENÚ:
-    # -------------------------------------------------------------------------
-    # Para añadir una nueva opción de menú (ej: Opción 3):
-    # 1. Crea un nuevo archivo de texto (ej: 'multimedia_apps.list') con un winget ID por línea.
-    # 2. Añade una nueva entrada al HashTable $MenuOptions siguiendo el patrón:
-    #    3 = @{ Label = "Instalar apps de Multimedia"; ConfigFile = "multimedia_apps.list" }
+    R = @{ Label = "Crear un Punto de Restauración del Sistema"; ConfigFile = "RESTORE_POINT" }
+    
+    1 = @{ Label = "Instalar apps de Ofimática/Comunes"; ConfigFile = "office_apps.list" }
+    2 = @{ Label = "Instalar apps de Desarrollo (Dev)"; ConfigFile = "dev_apps.list" }
+    # ... otras opciones ...
 }
 
 # Opción especial para instalar TODO. Requiere que existan todos los archivos configurados.
@@ -165,6 +198,23 @@ do {
     $ValidSelectionMade = $false
     
     foreach ($Option in $SelectedOptions) {
+        # --------------------------------------------------------
+        # MANEJO DE LA OPCIÓN 'R' (PUNTO DE RESTAURACIÓN)
+        # --------------------------------------------------------
+        if ($Option -eq "R" -or $Option -eq "r") {
+            $ValidSelectionMade = $true
+            $RestorePointName = "worksatation-restore-point-($((Get-Date).ToString('yyyyMMdd_HHmmss')))"
+            
+            # Ejecutar la función de punto de restauración
+            if (New-RestorePoint -Description $RestorePointName) {
+                Write-Host "Continúa seleccionando las apps que deseas instalar." -ForegroundColor Yellow
+            } else {
+                Write-Host "AVISO: La instalación continuará, pero el punto de restauración falló." -ForegroundColor DarkRed
+            }
+            continue # Vuelve al inicio del bucle para que el usuario pueda seleccionar apps
+        }
+
+        # ------------------------------------------------
         if ($MenuOptions.ContainsKey([int]$Option)) {
             $ValidSelectionMade = $true
             $ConfigInfo = $MenuOptions.[int]$Option
@@ -218,5 +268,12 @@ do {
     if ($Continue -notmatch "^[Ss]") {
         Write-Host "`nSaliendo del instalador. ¡Adiós!" -ForegroundColor Yellow
         $ExitLoop = $true
+        
+        # --- Detener el Registro (Log) ---
+        if ($Host.UI.TranscribeState -eq "Started") {
+            Stop-Transcript
+            Write-Host "El registro de la sesión ha sido guardado en: $LogFilePath" -ForegroundColor DarkGray
+        }
+        # -----------------------------------
     }
 } while (-not $ExitLoop)
